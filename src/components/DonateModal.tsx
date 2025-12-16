@@ -69,12 +69,12 @@ export default function DonateModal({ isOpen, onClose, onDonate }: DonateModalPr
             setSuccess(true)
             onDonate(response)
 
-            // Auto close after 2s
+            // Auto close after voice finishes (5s để đủ thời gian nói)
             setTimeout(() => {
                 setSuccess(false)
                 setSuccessItem(null)
                 onClose()
-            }, 2000)
+            }, 5000)
 
         } catch (error) {
             console.error('Error donating:', error)

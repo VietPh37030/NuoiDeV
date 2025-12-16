@@ -85,8 +85,13 @@ export default function Home() {
 
     // Handle donation response
     const handleDonateResponse = (response: { text: string; emotion: 'happy' | 'neutral' | 'hungry' | 'excited' }) => {
+        console.log('🎁 Donation response:', response.text)
         setDialogue(response.text)
         setAvatarEmotion(response.emotion)
+        // Force speak immediately
+        if (voiceEnabled) {
+            speak(response.text)
+        }
     }
 
     // Count total items in inventory
@@ -150,8 +155,8 @@ export default function Home() {
                         <button
                             onClick={() => setVoiceEnabled(!voiceEnabled)}
                             className={`p-3 rounded-xl transition-colors ${voiceEnabled
-                                    ? 'bg-primary/20 text-primary'
-                                    : 'bg-surface text-gray-400'
+                                ? 'bg-primary/20 text-primary'
+                                : 'bg-surface text-gray-400'
                                 }`}
                             title={voiceEnabled ? 'Tắt giọng nói' : 'Bật giọng nói'}
                         >

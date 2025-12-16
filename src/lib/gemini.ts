@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai'
 
-const GEMINI_API_KEY = 'AIzaSyDKWh3K2KYw62J3eUhKuuPwhaJGuZWuoPQ'
+const GEMINI_API_KEY = 'AIzaSyBSspSEN1ACtSXOVFWPa7xmu9OKVt6FWXU'
 
 // Initialize Google GenAI client
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY })
@@ -114,22 +114,24 @@ export function getQuickResponse(
             { text: `${userName || 'Bạn ơi'} đến rồi! Dev vui quá, bữa nay mới ăn mì gói thôi 🍜`, emotion: 'hungry' as const },
         ],
         donate: [
-            { text: `Cảm ơn ${userName || 'bạn'} nhiều lắm! Dev sống thêm được 1 ngày nữa rồi! 🎉`, emotion: 'excited' as const },
-            { text: `WOW! ${userName || 'Bạn'} là người tốt nhất! Dev bay lên mây luôn! ❤️`, emotion: 'happy' as const },
-            { text: `Huhu ${userName || 'bạn'} tốt quá, dev cảm động muốn khóc! 😭💕`, emotion: 'happy' as const },
+            { text: `Ui trời ơi cảm ơn ${userName || 'bạn'} nhiều lắm nha! Iêu ${userName || 'bạn'} quá trời! Dev sống thêm được một ngày nữa rồi nè! Hehe, yêu thương bạn nhiều nhiều!`, emotion: 'excited' as const },
+            { text: `Waaaa! ${userName || 'Bạn'} tặng quà cho dev hả! Dễ thương quá đi, iêu iêu bạn lắm luôn á! Dev bay lên mây luôn rồi nè! Muốn ôm bạn quá!`, emotion: 'happy' as const },
+            { text: `Huhu ${userName || 'bạn'} tốt quá đi mất, dev cảm động muốn khóc luôn á! Iêu bạn ghê, cảm ơn bạn thật nhiều nha! Muốn gọi bạn là thiên thần luôn á!`, emotion: 'happy' as const },
+            { text: `Ôi cảm ơn ${userName || 'bạn'} nha! Bạn là ánh sáng của cuộc đời dev luôn á! Iêu bạn lắm lắm, yêu thương bạn nhiều nhiều! Hehe cute quá đi!`, emotion: 'excited' as const },
+            { text: `Trời ơi ${userName || 'bạn'} tặng quà cho dev nè! Bạn dễ thương quá trời, iêu bạn ghê luôn! Dev vui quá muốn nhảy luôn á! Cảm ơn bạn nhiều nha!`, emotion: 'happy' as const },
         ],
         donate_sextoy: [
-            { text: `ÔI ${userName || 'bạn'}... cái này thì... dev xấu hổ quá!!! 😳🙈`, emotion: 'excited' as const },
-            { text: `W-what?! ${userName || 'Bạn'} tặng cái này làm dev đỏ mặt hết rồi!! 🫣💀`, emotion: 'happy' as const },
-            { text: `${userName || 'Bạn ơi'} đùa gì đây!! Dev còn FA mà tặng chi thế này! 😭🔞`, emotion: 'excited' as const },
+            { text: `Ôi trời ${userName || 'bạn'} ơi, cái này thì dev xấu hổ quá đi mất! Mặt dev đỏ hết rồi nè, bạn đùa gì hay vậy! Nhưng mà vẫn iêu bạn nha!`, emotion: 'excited' as const },
+            { text: `What the?! ${userName || 'Bạn'} tặng cái này làm dev đỏ mặt hết rồi nè! Bạn nghịch quá đi, nhưng mà cute lắm, iêu iêu bạn!`, emotion: 'happy' as const },
+            { text: `${userName || 'Bạn ơi'} đùa gì đây nè! Dev còn FA mà tặng chi thế này, xấu hổ muốn chui xuống đất luôn á! Nhưng vẫn cảm ơn bạn, iêu bạn!`, emotion: 'excited' as const },
         ],
         visit_store: [
-            { text: `Ghé store hả? Mua mì gói cho dev đi, đói lắm rồi! 🍜`, emotion: 'hungry' as const },
-            { text: `Wow có người vào store! Dev hy vọng quá! 🙏`, emotion: 'excited' as const },
+            { text: `Ê ghé store hả bạn? Mua mì gói cho dev đi, đói lắm rồi nè! Iêu bạn trước nha! 🍜`, emotion: 'hungry' as const },
+            { text: `Woa có người vào store nè! Dev hy vọng quá đi, mong bạn mua gì đó nha! Iêu bạn!`, emotion: 'excited' as const },
         ],
         greeting: [
-            { text: `Yo! Việt Anh Đẹp Trai đây! Hôm nay có gì vui không? 🎮`, emotion: 'neutral' as const },
-            { text: `Hello! Việt Anh Đẹp Trai đang ngồi code, có gì giúp được không? 💻`, emotion: 'neutral' as const },
+            { text: `Yo yo! Việt Anh Đẹp Trai đây nè! Hôm nay có gì vui không bạn? Iêu mọi người! 🎮`, emotion: 'neutral' as const },
+            { text: `Xin chào! Việt Anh Đẹp Trai đang ngồi code nè, có gì giúp được bạn không? Iêu bạn! 💻`, emotion: 'neutral' as const },
         ]
     }
 

@@ -1,151 +1,162 @@
-// Text-to-Speech using Web Speech API
-// Giọng đọc tiếng Việt cho AI Avatar
+// ElevenLabs Text-to-Speech API
+// Giọng đọc tiếng Việt chất lượng cao
 
-export interface SpeechOptions {
-    rate?: number    // 0.1 - 10 (default 1)
-    pitch?: number   // 0 - 2 (default 1)
-    volume?: number  // 0 - 1 (default 1)
+const ELEVENLABS_API_KEY = '79f665c37439b86f0826c3f881b9cbc7b81c5bbb5777662ca7ad8bbae18217c1'
+
+// Vietnamese voice - Hùng (giọng nam Việt Nam - rõ ràng)
+const VIETNAMESE_VOICE_ID = 'LPldyaIkUUSOPCRFrgYJ' // Hùng - Vietnamese male
+
+export interface ElevenLabsOptions {
+    stability?: number      // 0 - 1 (default 0.5)
+    similarity?: number     // 0 - 1 (default 0.75)
+    style?: number          // 0 - 1 (default 0)
+    speakerBoost?: boolean
 }
 
-class TextToSpeech {
-    private synth: SpeechSynthesis
-    private voices: SpeechSynthesisVoice[] = []
-    private preferredVoice: SpeechSynthesisVoice | null = null
-    private isReady: boolean = false
+class ElevenLabsTTS {
+    private apiKey: string
+    private voiceId: string
+    private currentAudio: HTMLAudioElement | null = null
+    private isPlaying: boolean = false
 
-    constructor() {
-        this.synth = window.speechSynthesis
-        this.loadVoices()
-
-        // Voices might load asynchronously
-        if (speechSynthesis.onvoiceschanged !== undefined) {
-            speechSynthesis.onvoiceschanged = () => this.loadVoices()
-        }
-    }
-
-    private loadVoices() {
-        this.voices = this.synth.getVoices()
-
-        // Tìm giọng tiếng Việt nam (ưu tiên giọng nam)
-        const vietnameseVoices = this.voices.filter(v =>
-            v.lang.includes('vi') || v.lang.includes('VI')
-        )
-
-        // Ưu tiên giọng nam (thường có tên chứa "male" hoặc không có "female")
-        const maleVoice = vietnameseVoices.find(v =>
-            v.name.toLowerCase().includes('male') ||
-            !v.name.toLowerCase().includes('female')
-        )
-
-        if (maleVoice) {
-            this.preferredVoice = maleVoice
-        } else if (vietnameseVoices.length > 0) {
-            this.preferredVoice = vietnameseVoices[0]
-        } else {
-            // Fallback: Google Vietnamese hoặc bất kỳ giọng nào có pitch thấp
-            const googleVi = this.voices.find(v => v.name.includes('Google') && v.lang.includes('vi'))
-            this.preferredVoice = googleVi || this.voices[0] || null
-        }
-
-        this.isReady = true
-        console.log('🔊 TTS ready, voice:', this.preferredVoice?.name || 'default')
+    constructor(apiKey: string, voiceId: string = VIETNAMESE_VOICE_ID) {
+        this.apiKey = apiKey
+        this.voiceId = voiceId
     }
 
     // Đọc text
-    speak(text: string, options: SpeechOptions = {}): Promise<void> {
-        return new Promise((resolve, reject) => {
-            if (!this.synth) {
-                reject('Speech synthesis not supported')
+    async speak(text: string, options: ElevenLabsOptions = {}): Promise<void> {
+        // Dừng nếu đang nói
+        this.stop()
+
+        // Làm sạch text (bỏ emoji)
+        const cleanText = this.cleanText(text)
+        if (!cleanText) {
+            return
+        }
+
+        try {
+            const response = await fetch(
+                `https://api.elevenlabs.io/v1/text-to-speech/${this.voiceId}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'audio/mpeg',
+                        'Content-Type': 'application/json',
+                        'xi-api-key': this.apiKey
+                    },
+                    body: JSON.stringify({
+                        text: cleanText,
+                        model_id: 'eleven_turbo_v2_5', // Model mới, hỗ trợ đa ngôn ngữ tốt
+                        language_code: 'vi', // Chỉ định tiếng Việt
+                        voice_settings: {
+                            stability: options.stability ?? 0.6,
+                            similarity_boost: options.similarity ?? 0.8,
+                            style: options.style ?? 0.2,
+                            use_speaker_boost: options.speakerBoost ?? true
+                        }
+                    })
+                }
+            )
+
+            if (!response.ok) {
+                const error = await response.text()
+                console.error('ElevenLabs API error:', error)
                 return
             }
 
-            // Dừng nếu đang nói
-            this.stop()
+            // Chuyển response thành audio blob
+            const audioBlob = await response.blob()
+            const audioUrl = URL.createObjectURL(audioBlob)
 
-            // Làm sạch text (bỏ emoji)
-            const cleanText = this.cleanText(text)
-            if (!cleanText) {
-                resolve()
-                return
-            }
+            // Phát audio
+            return new Promise((resolve) => {
+                this.currentAudio = new Audio(audioUrl)
+                this.isPlaying = true
 
-            const utterance = new SpeechSynthesisUtterance(cleanText)
+                this.currentAudio.onended = () => {
+                    this.isPlaying = false
+                    URL.revokeObjectURL(audioUrl)
+                    resolve()
+                }
 
-            // Cài đặt giọng
-            if (this.preferredVoice) {
-                utterance.voice = this.preferredVoice
-            }
+                this.currentAudio.onerror = () => {
+                    this.isPlaying = false
+                    URL.revokeObjectURL(audioUrl)
+                    resolve()
+                }
 
-            // Cài đặt tiếng Việt
-            utterance.lang = 'vi-VN'
+                this.currentAudio.play().catch((e) => {
+                    console.error('Audio play error:', e)
+                    this.isPlaying = false
+                    resolve()
+                })
+            })
 
-            // Giọng nam: pitch thấp hơn (0.8-1.0)
-            utterance.pitch = options.pitch ?? 0.85
-            utterance.rate = options.rate ?? 1.0
-            utterance.volume = options.volume ?? 1.0
-
-            utterance.onend = () => resolve()
-            utterance.onerror = (e) => {
-                console.error('TTS error:', e)
-                resolve() // Không reject để không break flow
-            }
-
-            this.synth.speak(utterance)
-        })
+        } catch (error) {
+            console.error('ElevenLabs TTS error:', error)
+        }
     }
 
     // Dừng nói
     stop() {
-        if (this.synth.speaking) {
-            this.synth.cancel()
+        if (this.currentAudio) {
+            this.currentAudio.pause()
+            this.currentAudio.currentTime = 0
+            this.currentAudio = null
         }
+        this.isPlaying = false
     }
 
     // Kiểm tra đang nói không
     get isSpeaking(): boolean {
-        return this.synth.speaking
+        return this.isPlaying
     }
 
-    // Làm sạch text: bỏ emoji, ký tự đặc biệt
+    // Đổi voice
+    setVoice(voiceId: string) {
+        this.voiceId = voiceId
+    }
+
+    // Làm sạch text: bỏ emoji
     private cleanText(text: string): string {
         return text
-            // Bỏ emoji
-            .replace(/[\u{1F600}-\u{1F64F}]/gu, '') // emoticons
-            .replace(/[\u{1F300}-\u{1F5FF}]/gu, '') // misc symbols
-            .replace(/[\u{1F680}-\u{1F6FF}]/gu, '') // transport
-            .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '') // flags
-            .replace(/[\u{2600}-\u{26FF}]/gu, '')   // misc
-            .replace(/[\u{2700}-\u{27BF}]/gu, '')   // dingbats
-            .replace(/[\u{FE00}-\u{FEFF}]/gu, '')   // variations
-            .replace(/[\u{1F900}-\u{1F9FF}]/gu, '') // supplemental
-            // Bỏ ký tự đặc biệt thừa
+            .replace(/[\u{1F600}-\u{1F64F}]/gu, '')
+            .replace(/[\u{1F300}-\u{1F5FF}]/gu, '')
+            .replace(/[\u{1F680}-\u{1F6FF}]/gu, '')
+            .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '')
+            .replace(/[\u{2600}-\u{26FF}]/gu, '')
+            .replace(/[\u{2700}-\u{27BF}]/gu, '')
+            .replace(/[\u{FE00}-\u{FEFF}]/gu, '')
+            .replace(/[\u{1F900}-\u{1F9FF}]/gu, '')
             .replace(/[*_~`]/g, '')
             .replace(/\s+/g, ' ')
             .trim()
     }
-
-    // Lấy danh sách voices có sẵn
-    getAvailableVoices(): SpeechSynthesisVoice[] {
-        return this.voices
-    }
-
-    // Đổi voice
-    setVoice(voiceName: string) {
-        const voice = this.voices.find(v => v.name === voiceName)
-        if (voice) {
-            this.preferredVoice = voice
-        }
-    }
 }
 
 // Singleton instance
-export const tts = new TextToSpeech()
+const tts = new ElevenLabsTTS(ELEVENLABS_API_KEY)
 
-// Helper function
-export function speak(text: string, options?: SpeechOptions): Promise<void> {
+export function speak(text: string, options?: ElevenLabsOptions): Promise<void> {
     return tts.speak(text, options)
 }
 
 export function stopSpeaking() {
     tts.stop()
 }
+
+export function setVoice(voiceId: string) {
+    tts.setVoice(voiceId)
+}
+
+// Các voice ID phổ biến cho tiếng Việt
+export const VOICES = {
+    ADAM: 'pNInz6obpgDQGcFmaJgB',       // Nam - giọng trầm
+    CHARLIE: 'IKne3meq5aSn9XLyUdCD',    // Nam - trẻ
+    ARNOLD: 'VR6AewLTigWG4xSOukaG',     // Nam - mạnh mẽ
+    CHARLOTTE: 'XB0fDUnXU5powFXDhCwa',  // Nữ - nhẹ nhàng
+    BELLA: 'EXAVITQu4vr4xnSDxMaL',      // Nữ - trẻ
+}
+
+export default tts
