@@ -9,7 +9,8 @@ import TransactionHistory from '@/components/TransactionHistory'
 import DonateModal from '@/components/DonateModal'
 import { getMoodMessage, formatCoin, getDevMood, ITEMS } from '@/lib/utils'
 import { getQuickResponse, generateIanResponse } from '@/lib/gemini'
-import { Heart, Users, Coins, TrendingUp, Sparkles, ArrowRight, Send, Gift, Package } from 'lucide-react'
+import { speak, stopSpeaking } from '@/lib/speech'
+import { Heart, Users, Coins, TrendingUp, Sparkles, ArrowRight, Send, Gift, Package, Volume2, VolumeX } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export default function Home() {
@@ -24,12 +25,21 @@ export default function Home() {
     const [chatInput, setChatInput] = useState('')
     const [isThinking, setIsThinking] = useState(false)
     const [showDonateModal, setShowDonateModal] = useState(false)
+    const [voiceEnabled, setVoiceEnabled] = useState(true)
 
     // Set initial emotion based on dev status
     useEffect(() => {
         const mood = getDevMood(devStatus.totalCoins)
         setAvatarEmotion(mood)
     }, [devStatus.totalCoins])
+
+    // Speak dialogue when it changes
+    useEffect(() => {
+        if (dialogue && voiceEnabled && !isThinking) {
+            speak(dialogue)
+        }
+        return () => stopSpeaking()
+    }, [dialogue, voiceEnabled, isThinking])
 
     // Greet user on login
     useEffect(() => {
@@ -45,6 +55,7 @@ export default function Home() {
         if (!chatInput.trim() || isThinking) return
 
         setIsThinking(true)
+        stopSpeaking()
         setDialogue('🤔 Đang suy nghĩ...')
 
         try {
@@ -136,6 +147,16 @@ export default function Home() {
                          focus:outline-none focus:border-primary transition-colors"
                             disabled={isThinking}
                         />
+                        <button
+                            onClick={() => setVoiceEnabled(!voiceEnabled)}
+                            className={`p-3 rounded-xl transition-colors ${voiceEnabled
+                                    ? 'bg-primary/20 text-primary'
+                                    : 'bg-surface text-gray-400'
+                                }`}
+                            title={voiceEnabled ? 'Tắt giọng nói' : 'Bật giọng nói'}
+                        >
+                            {voiceEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                        </button>
                         <button
                             onClick={handleChat}
                             disabled={isThinking || !chatInput.trim()}
